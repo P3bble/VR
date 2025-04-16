@@ -6,7 +6,7 @@ public class gate : MonoBehaviour
 {
     [SerializeField] private Animator animator;
     [SerializeField] private GameObject ActiveStrip;
-    [SerializeField] private KeyCollector playerKeyCollector; // Drag in the player
+    [SerializeField] private KeyCollector playerKeyCollector;
 
     private bool ballInCradle = false;
 
@@ -28,12 +28,12 @@ public class gate : MonoBehaviour
         if (playerKeyCollector != null && playerKeyCollector.hasFullKey)
         {
             OpenGate();
-            playerKeyCollector.SendMessage("ShowPopup", "The gate is opening!"); // 👈 Call your existing method
+            playerKeyCollector.SendMessage("ShowPopup", "The gate is opening!"); 
         }
         else
         {
             Debug.Log("Ball is in cradle, but player does NOT have the full key yet.");
-            playerKeyCollector.SendMessage("ShowPopup", "You need the full key!"); // 👈 Reuse your player popup
+            playerKeyCollector.SendMessage("ShowPopup", "You need the full key!"); 
         }
     }
 
@@ -61,7 +61,7 @@ public class gate : MonoBehaviour
         Debug.Log("Gate is closing.");
     }
 
-    // Optional if player gets key after ball is placed
+    // if the player gets key after ball is placed in cradle
     public void CheckGateConditions()
     {
         if (ballInCradle && playerKeyCollector != null && playerKeyCollector.hasFullKey)

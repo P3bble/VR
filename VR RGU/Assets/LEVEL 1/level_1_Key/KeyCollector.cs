@@ -1,6 +1,6 @@
 ﻿using UnityEngine;
 using UnityEngine.UI;
-using TMPro; // Add this for TextMeshPro
+using TMPro;
 
 public class KeyCollector : MonoBehaviour
 {
@@ -14,12 +14,22 @@ public class KeyCollector : MonoBehaviour
     public Image keyPartAImage;
     public Image keyPartBImage;
     public Image fullKeyImage;
+    public TextMeshProUGUI popupText;
+    public float popupDuration = 2f;
 
-    public TextMeshProUGUI popupText; // 👉 Assign this in Inspector
-    public float popupDuration = 2f;  // Duration before the message disappears
+    [SerializeField] private ParticleSystem sparkEffect; // Reference to particle system
+
+    // Animator
+    [SerializeField] private Animator npcAnimator;
+
+    // Audio
+    [SerializeField] private AudioClip coinPickupSound;
+    [SerializeField] private AudioClip npcNoKeysSound;
+    [SerializeField] private AudioClip npcCraftSuccessSound;
+    [SerializeField] private AudioClip npcAlreadyHaveKeySound;
+    private AudioSource audioSource;
 
     private void Start()
-
     {
         popupText.gameObject.SetActive(false);
         if (keyPartAImage != null) keyPartAImage.enabled = false;
@@ -27,9 +37,14 @@ public class KeyCollector : MonoBehaviour
         if (fullKeyImage != null) fullKeyImage.enabled = false;
 
         if (keyCompleteEffect != null) keyCompleteEffect.SetActive(false);
-        if (popupText != null) popupText.text = ""; // Hide message at start
-    }
+        if (popupText != null) popupText.text = "";
 
+        audioSource = GetComponent<AudioSource>();
+        if (audioSource == null)
+        {
+            Debug.LogError("AudioSource component missing on player object. Please add one.");
+        }
+    }
 
     private void OnTriggerEnter(Collider other)
     {
@@ -38,14 +53,16 @@ public class KeyCollector : MonoBehaviour
             hasPartA = true;
             Destroy(other.gameObject);
             keyPartAImage.enabled = true;
-            ShowPopup("You collected Key Part A!");
+            ShowPopup("You collected a broken part of a key.");
+            PlayPickupSound();
         }
         else if (other.CompareTag("KeyPartB"))
         {
             hasPartB = true;
             Destroy(other.gameObject);
             keyPartBImage.enabled = true;
-            ShowPopup("You collected Key Part B!");
+            ShowPopup("You collected a broken part of a key.");
+            PlayPickupSound();
         }
 
         if (hasPartA && hasPartB && !hasFullKey)
@@ -67,17 +84,36 @@ public class KeyCollector : MonoBehaviour
             keyPartAImage.enabled = false;
             keyPartBImage.enabled = false;
 
+            if (sparkEffect != null)
+            {
+                sparkEffect.gameObject.SetActive(true);
+                sparkEffect.Play();
+                StartCoroutine(HideParticleEffectAfterDelay(sparkEffect, 2f)); // 👈 auto-hide after 2 sec
+            }
+
             if (keyCompleteEffect != null) keyCompleteEffect.SetActive(false);
 
-            ShowPopup("You combined the key parts into a FULL KEY!");
+            ShowPopup("You've got both parts! I'll fix it for you.");
+            PlayNpcSound(npcCraftSuccessSound);
+
+            if (npcAnimator != null)
+            {
+                npcAnimator.SetTrigger("Point");
+            }
         }
         else if (hasFullKey)
         {
-            ShowPopup("You already have the full key.");
+            ShowPopup("I already made you the key.. maybe try that door over there.");
+            PlayNpcSound(npcAlreadyHaveKeySound);
         }
         else
         {
-            ShowPopup("You don't have both key parts yet.");
+            ShowPopup("Find the broken keys.");
+            if (npcAnimator != null)
+            {
+                npcAnimator.SetTrigger("ShakeHead");
+            }
+            PlayNpcSound(npcNoKeysSound);
         }
     }
 
@@ -85,7 +121,7 @@ public class KeyCollector : MonoBehaviour
     {
         if (popupText != null)
         {
-            StopAllCoroutines(); // Stop previous messages if any
+            StopAllCoroutines();
             StartCoroutine(PopupRoutine(message));
         }
     }
@@ -98,4 +134,40 @@ public class KeyCollector : MonoBehaviour
         popupText.text = "";
         popupText.gameObject.SetActive(false);
     }
+
+    private void PlayPickupSound()
+    {
+        if (coinPickupSound != null && audioSource != null)
+        {
+            audioSource.PlayOneShot(coinPickupSound);
+        }
+        else
+        {
+            Debug.LogError("coinPickupSound or AudioSource is missing!");
+        }
+    }
+
+    private void PlayNpcSound(AudioClip clip)
+    {
+        if (clip != null && audioSource != null)
+        {
+            audioSource.PlayOneShot(clip);
+        }
+        else
+        {
+            Debug.LogError("NPC sound or AudioSource is missing!");
+        }
+    }
+
+    private System.Collections.IEnumerator HideParticleEffectAfterDelay(ParticleSystem ps, float delay)
+    {
+        yield return new WaitForSeconds(delay);
+
+        // Properly stop and clear the particle effect
+        ps.Stop(true, ParticleSystemStopBehavior.StopEmitting);
+        yield return new WaitWhile(() => ps.IsAlive(true)); // Wait until all particles finish
+
+        ps.gameObject.SetActive(false);
+    }
+
 }

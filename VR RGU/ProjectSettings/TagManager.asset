@@ -9,6 +9,10 @@ TagManager:
   - KeyPartA
   - KeyPartB
   - CradleBall
+  - Uncorrupted
+  - Corrupted
+  - CorruptedBox
+  - UncorruptedBox
   layers:
   - Default
   - TransparentFX
