@@ -38,7 +38,7 @@ public class PuzzleManager : MonoBehaviour
         }
         else
         {
-            Debug.Log("Puzzle In Progress...");
+           
         }
     }
 }
